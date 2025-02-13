@@ -5,37 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        table { width: 100%; border-collapse: collapse; }
-        td { 
-            padding: 10px; 
-            font-size: 28px; 
-            font-weight: bold; 
-            color: #FF3300; 
-            text-shadow: 1px 1px orange; 
-            border: 1px solid orange; 
-            width: 150px; 
+        @font-face {
+    font-family: 'CasinoFlat';
+    src: url('https://ascenxi0n.github.io/crpl.github.io/CasinoFlat.ttf') format('truetype');
+}
+
+        body { 
+            font-family: 'CasinoFlat', Arial, sans-serif; 
             text-align: center;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
         }
-        .spin {
-            animation: spinEffect 0.8s ease-in-out;
+
+        /* Leaderboard Container */
+        #leaderboard-container {
+            width: 40vw;
+            height: 20vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
         }
-        @keyframes spinEffect {
-            0% { transform: translateY(0px); opacity: 1; }
-            30% { transform: translateY(-30px); opacity: 0.5; }
-            60% { transform: translateY(30px); opacity: 0.5; }
-            100% { transform: translateY(0px); opacity: 1; }
+
+        /* Table */
+        table { 
+            width: 100%; 
+            height: 100%;
+            border-collapse: collapse; 
+            background: transparent;
+            table-layout: fixed; /* Keep columns fixed */
+        }
+
+        /* Table Cells */
+        td { 
+            padding: 1vh; 
+            font-size: 24px; 
+            color: #FF3300; 
+            -webkit-text-stroke: 0.7px orange;
+            border: none; 
+            text-align: center;
+            background: transparent;
+            letter-spacing: 2px;
+            line-height: 90%;
+            width: 50%; /* Ensures both columns stay separate */
+            overflow: hidden;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Shrinking Text If Overflowing */
+        .shrink-text {
+            display: inline-block;
+            max-width: 100%;
+            font-size: 24px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Animation */
+        @keyframes spin {
+            0% { transform: rotateX(0deg); opacity: 1; }
+            50% { transform: rotateX(90deg); opacity: 0.2; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        .spin-effect {
+            display: inline-block;
+            animation: spin 0.5s ease-in-out;
         }
     </style>
 </head>
 <body>
-    <table id="leaderboard">
-        <tbody></tbody>
-    </table>
-
+    <div id="leaderboard-container">
+        <table id="leaderboard">
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <audio id="updateSound" src="https://ascenxi0n.github.io/crpl.github.io/update.wav"></audio>
+    
     <script>
         let previousData = [];
-        const API_URL = "https://script.google.com/macros/s/AKfycbyq_ZfS7Nwn_x9aybgVFCJ3ySOUwpko2GsS4UN_PfTPhdX2ck4wsWoB8lwKPUSv3j_i/exec?data=true"; // Replace with your Apps Script URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbyq_ZfS7Nwn_x9aybgVFCJ3ySOUwpko2GsS4UN_PfTPhdX2ck4wsWoB8lwKPUSv3j_i/exec?data=true";
+        const updateSound = document.getElementById("updateSound");
 
         async function fetchLeaderboardData() {
             try {
@@ -46,10 +103,10 @@
 
                 if (!isDataSame(result, previousData)) {
                     updateTable(result);
+                    playUpdateSound(); // Play sound when leaderboard updates
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                fetchLeaderboardData(); 
+                setTimeout(fetchLeaderboardData, 2000);
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setTimeout(fetchLeaderboardData, 5000);
@@ -60,32 +117,65 @@
             return JSON.stringify(newData) === JSON.stringify(oldData);
         }
 
+        function playUpdateSound() {
+            updateSound.currentTime = 0;
+            updateSound.play();
+        }
+
         function updateTable(data) {
             let tableBody = document.querySelector("#leaderboard tbody");
             tableBody.innerHTML = "";  
 
-            data.forEach((entry, index) => {
+            data.slice(0, 5).forEach((entry, index) => {
                 let row = document.createElement("tr");
                 let playerCell = document.createElement("td");
                 let pointsCell = document.createElement("td");
 
-                playerCell.innerText = entry.player;
-                pointsCell.innerText = entry.points;
+                let playerChanged = previousData[index] && previousData[index].player !== entry.player;
+                let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
 
-                if (previousData[index] && previousData[index].points !== entry.points) {
-                    pointsCell.classList.add("spin");
-                    setTimeout(() => pointsCell.classList.remove("spin"), 800);
-                }
+                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>`;
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
                 tableBody.appendChild(row);
+
+                setTimeout(() => {
+                    let playerSpan = playerCell.querySelector('.shrink-text');
+                    let pointsSpan = pointsCell.querySelector('.shrink-text');
+
+                    adjustFontSize(playerSpan);
+                    adjustFontSize(pointsSpan);
+
+                    playerSpan.classList.remove('spin-effect');
+                    pointsSpan.classList.remove('spin-effect');
+
+                    void playerSpan.offsetWidth;
+                    void pointsSpan.offsetWidth;
+
+                    if (playerChanged || pointsChanged) {
+                        playerSpan.classList.add('spin-effect');
+                        pointsSpan.classList.add('spin-effect');
+                    }
+                }, 10);
             });
 
             previousData = [...data];
         }
 
-        fetchLeaderboardData(); 
+
+        function adjustFontSize(element) {
+            let parentWidth = element.parentElement.clientWidth;
+            let fontSize = 24;
+
+            while (element.scrollWidth > parentWidth && fontSize > 12) {
+                fontSize--;
+                element.style.fontSize = fontSize + "px";
+            }
+        }
+
+        fetchLeaderboardData();
     </script>
 </body>
 </html>
