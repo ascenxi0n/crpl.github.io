@@ -51,15 +51,18 @@ td span {
     td { font-size: 20px; } /* Decrease font size for smaller screens */
 }
 
-        .spin {
-            animation: spinEffect 0.8s ease-in-out;
+        @keyframes spin {
+            0% { transform: rotateX(0deg); opacity: 1; }
+            50% { transform: rotateX(90deg); opacity: 0.2; }
+            100% { transform: rotateX(0deg); opacity: 1; }
         }
-        @keyframes spinEffect {
-            0% { transform: translateY(0px); opacity: 1; }
-            30% { transform: translateY(-30px); opacity: 0.5; }
-            60% { transform: translateY(30px); opacity: 0.5; }
-            100% { transform: translateY(0px); opacity: 1; }
+
+        /* Apply the animation */
+        .spin-effect {
+            display: inline-block;
+            animation: spin 0.5s ease-in-out;
         }
+
     </style>
 </head>
 <body>
@@ -82,8 +85,7 @@ td span {
                     updateTable(result);
                 }
 
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                fetchLeaderboardData(); 
+                setTimeout(fetchLeaderboardData, 2000); // Periodic update
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setTimeout(fetchLeaderboardData, 5000);
@@ -98,28 +100,38 @@ td span {
             let tableBody = document.querySelector("#leaderboard tbody");
             tableBody.innerHTML = "";  
 
-            data.forEach((entry, index) => {
+            data.slice(0, 5).forEach((entry, index) => { // Show only top 5 entries
                 let row = document.createElement("tr");
                 let playerCell = document.createElement("td");
                 let pointsCell = document.createElement("td");
 
-                playerCell.innerText = entry.player;
-                pointsCell.innerText = entry.points;
-
-                if (previousData[index] && previousData[index].points !== entry.points) {
-                    pointsCell.classList.add("spin");
-                    setTimeout(() => pointsCell.classList.remove("spin"), 800);
-                }
+                playerCell.innerHTML = `<span class="spin-effect">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="spin-effect">${entry.points}</span>`;
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
                 tableBody.appendChild(row);
+
+                // Trigger spin animation on update
+                setTimeout(() => {
+                    let playerSpan = playerCell.querySelector('.spin-effect');
+                    let pointsSpan = pointsCell.querySelector('.spin-effect');
+
+                    playerSpan.classList.remove('spin-effect');
+                    pointsSpan.classList.remove('spin-effect');
+
+                    void playerSpan.offsetWidth; // Force reflow
+                    void pointsSpan.offsetWidth; 
+
+                    playerSpan.classList.add('spin-effect');
+                    pointsSpan.classList.add('spin-effect');
+                }, 10);
             });
 
             previousData = [...data];
         }
 
-        fetchLeaderboardData(); 
+        fetchLeaderboardData();
     </script>
 </body>
 </html>
