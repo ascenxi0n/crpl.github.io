@@ -86,10 +86,13 @@
             <tbody></tbody>
         </table>
     </div>
-
+    
+    <audio id="updateSound" src="https://ascenxi0n.github.io/crpl.github.io/update.wav"></audio>
+    
     <script>
         let previousData = [];
         const API_URL = "https://script.google.com/macros/s/AKfycbyq_ZfS7Nwn_x9aybgVFCJ3ySOUwpko2GsS4UN_PfTPhdX2ck4wsWoB8lwKPUSv3j_i/exec?data=true";
+        const updateSound = document.getElementById("updateSound");
 
         async function fetchLeaderboardData() {
             try {
@@ -100,6 +103,7 @@
 
                 if (!isDataSame(result, previousData)) {
                     updateTable(result);
+                    playUpdateSound(); // Play sound when leaderboard updates
                 }
 
                 setTimeout(fetchLeaderboardData, 2000);
@@ -113,6 +117,11 @@
             return JSON.stringify(newData) === JSON.stringify(oldData);
         }
 
+        function playUpdateSound() {
+            updateSound.currentTime = 0;
+            updateSound.play();
+        }
+
         function updateTable(data) {
             let tableBody = document.querySelector("#leaderboard tbody");
             tableBody.innerHTML = "";  
@@ -122,8 +131,11 @@
                 let playerCell = document.createElement("td");
                 let pointsCell = document.createElement("td");
 
-                playerCell.innerHTML = `<span class="shrink-text spin-effect">${entry.player}</span>`;
-                pointsCell.innerHTML = `<span class="shrink-text spin-effect">${entry.points}</span>`;
+                let playerChanged = previousData[index] && previousData[index].player !== entry.player;
+                let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
+
+                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>`;
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
@@ -139,16 +151,19 @@
                     playerSpan.classList.remove('spin-effect');
                     pointsSpan.classList.remove('spin-effect');
 
-                    void playerSpan.offsetWidth; 
-                    void pointsSpan.offsetWidth; 
+                    void playerSpan.offsetWidth;
+                    void pointsSpan.offsetWidth;
 
-                    playerSpan.classList.add('spin-effect');
-                    pointsSpan.classList.add('spin-effect');
+                    if (playerChanged || pointsChanged) {
+                        playerSpan.classList.add('spin-effect');
+                        pointsSpan.classList.add('spin-effect');
+                    }
                 }, 10);
             });
 
             previousData = [...data];
         }
+
 
         function adjustFontSize(element) {
             let parentWidth = element.parentElement.clientWidth;
