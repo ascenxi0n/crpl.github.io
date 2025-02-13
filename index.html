@@ -16,38 +16,41 @@ body {
 }
 
 table { 
-    width: 50%; /* Adjust width to bring columns closer */
+    width: 50%; 
     border-collapse: collapse; 
     background: transparent; 
-    border: none; /* Remove table borders */
-    margin: auto; /* Center the table */
 }
 
 td { 
-    padding: 5px 15px; /* Adjust padding to reduce column spacing */
-    font-size: 24px; /* Set text size to 24px */
-    font-weight: bold; 
-    color: #FF3300; /* Fill color */
-    -webkit-text-stroke: 1px orange; /* 1px orange outline */
-    border: none; /* Remove cell borders */
+    padding: 5px 10px; 
+    font-size: 24px; 
+    color: #FF3300; 
+    -webkit-text-stroke: 0.5px orange; 
+    border: none; 
+    width: 150px; 
     text-align: center;
     background: transparent;
-    letter-spacing: 1px; /* Slightly tighter letter spacing */
+    letter-spacing: 2px; /* Slightly tighter letter spacing */
     line-height: 80%; /* Reduce line spacing by 20% */
     white-space: nowrap; /* Prevent wrapping */
     overflow: hidden; /* Hide overflow */
     text-overflow: ellipsis; /* Show '...' if text is too long */
 }
 
-/* Ensure proper column alignment */
-td:first-child { text-align: left; width: 60%; } /* Player column */
-td:last-child { text-align: right; width: 40%; } /* Points column */
-
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    table { width: 80%; } /* Expand table for smaller screens */
-    td { font-size: 22px; } /* Decrease font size slightly for mobile */
+/* Responsive font-size adjustment */
+td span {
+    display: inline-block;
+    max-width: 100%;
+    font-size: 2vw; /* Dynamic font size */
+    min-width: 10px;
+    min-height: 10px;
 }
+
+/* Media Query for smaller screens */
+@media (max-width: 768px) {
+    td { font-size: 20px; } /* Decrease font size for smaller screens */
+}
+
         .spin {
             animation: spinEffect 0.8s ease-in-out;
         }
