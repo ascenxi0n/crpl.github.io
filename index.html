@@ -5,18 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Leaderboard</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        table { width: 100%; border-collapse: collapse; }
-        td { 
-            padding: 10px; 
-            font-size: 28px; 
-            font-weight: bold; 
-            color: #FF3300; 
-            text-shadow: 1px 1px orange; 
-            border: 1px solid orange; 
-            width: 150px; 
-            text-align: center;
-        }
+        @font-face {
+    font-family: 'CasinoFlat';
+    src: url('https://raw.githubusercontent.com/your-username/your-repo/main/fonts/CasinoFlat.ttf') format('truetype');
+}
+
+body { 
+    font-family: 'CasinoFlat', Arial, sans-serif; 
+    text-align: center;
+}
+
+table { 
+    width: 100%; 
+    border-collapse: collapse; 
+    background: transparent; 
+}
+
+td { 
+    padding: 10px; 
+    font-size: 28px; 
+    font-weight: bold; 
+    color: #FF3300; 
+    -webkit-text-stroke: 1px orange; 
+    border: 1px solid orange; 
+    width: 150px; 
+    text-align: center;
+    background: transparent;
+}
+
         .spin {
             animation: spinEffect 0.8s ease-in-out;
         }
