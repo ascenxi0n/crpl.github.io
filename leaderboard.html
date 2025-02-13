@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        table { width: 100%; border-collapse: collapse; }
+        td { 
+            padding: 10px; 
+            font-size: 28px; 
+            font-weight: bold; 
+            color: #FF3300; 
+            text-shadow: 1px 1px orange; 
+            border: 1px solid orange; 
+            width: 150px; 
+            text-align: center;
+        }
+        .spin {
+            animation: spinEffect 0.8s ease-in-out;
+        }
+        @keyframes spinEffect {
+            0% { transform: translateY(0px); opacity: 1; }
+            30% { transform: translateY(-30px); opacity: 0.5; }
+            60% { transform: translateY(30px); opacity: 0.5; }
+            100% { transform: translateY(0px); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <table id="leaderboard">
+        <tbody></tbody>
+    </table>
+
+    <script>
+        let previousData = [];
+        const API_URL = "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec?data=true"; // Replace with your Apps Script URL
+
+        async function fetchLeaderboardData() {
+            try {
+                console.log("Fetching leaderboard data...");
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                console.log("Parsed JSON:", result);
+
+                if (!isDataSame(result, previousData)) {
+                    updateTable(result);
+                }
+
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                fetchLeaderboardData(); 
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                setTimeout(fetchLeaderboardData, 5000);
+            }
+        }
+
+        function isDataSame(newData, oldData) {
+            return JSON.stringify(newData) === JSON.stringify(oldData);
+        }
+
+        function updateTable(data) {
+            let tableBody = document.querySelector("#leaderboard tbody");
+            tableBody.innerHTML = "";  
+
+            data.forEach((entry, index) => {
+                let row = document.createElement("tr");
+                let playerCell = document.createElement("td");
+                let pointsCell = document.createElement("td");
+
+                playerCell.innerText = entry.player;
+                pointsCell.innerText = entry.points;
+
+                if (previousData[index] && previousData[index].points !== entry.points) {
+                    pointsCell.classList.add("spin");
+                    setTimeout(() => pointsCell.classList.remove("spin"), 800);
+                }
+
+                row.appendChild(playerCell);
+                row.appendChild(pointsCell);
+                tableBody.appendChild(row);
+            });
+
+            previousData = [...data];
+        }
+
+        fetchLeaderboardData(); 
+    </script>
+</body>
+</html>
