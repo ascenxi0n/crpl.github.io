@@ -10,7 +10,7 @@
     src: url('https://ascenxi0n.github.io/crpl.github.io/CasinoFlat.ttf') format('truetype');
 }
 
-body { 
+        body { 
             font-family: 'CasinoFlat', Arial, sans-serif; 
             text-align: center;
             background: transparent;
@@ -19,29 +19,29 @@ body {
             overflow: hidden;
         }
 
-        /* Responsive Container */
+        /* Leaderboard Container */
         #leaderboard-container {
-            width: 40vw;  /* Adjust width dynamically */
-            height: 20vh; /* Adjust height dynamically */
+            width: 40vw;
+            height: 20vh;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
         }
 
-        /* Table Layout */
+        /* Table */
         table { 
             width: 100%; 
             height: 100%;
             border-collapse: collapse; 
             background: transparent;
-            table-layout: fixed; /* Fix table layout */
+            table-layout: fixed; /* Keep columns fixed */
         }
 
         /* Table Cells */
         td { 
             padding: 1vh; 
-            font-size: clamp(10px, 2vw, 24px); /* Dynamic font scaling */
+            font-size: 24px; 
             color: #FF3300; 
             -webkit-text-stroke: 0.7px orange;
             border: none; 
@@ -49,36 +49,47 @@ body {
             background: transparent;
             letter-spacing: 2px;
             line-height: 90%;
-            width: 50%;
+            width: 50%; /* Ensures both columns stay separate */
             overflow: hidden;
-            text-overflow: ellipsis;
             white-space: nowrap;
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
         }
+
+        /* Shrinking Text If Overflowing */
+        .shrink-text {
+            display: inline-block;
+            max-width: 100%;
+            font-size: 24px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Animation */
         @keyframes spin {
             0% { transform: rotateX(0deg); opacity: 1; }
             50% { transform: rotateX(90deg); opacity: 0.2; }
             100% { transform: rotateX(0deg); opacity: 1; }
         }
 
-        /* Apply the animation */
         .spin-effect {
             display: inline-block;
             animation: spin 0.5s ease-in-out;
         }
-
     </style>
 </head>
 <body>
-    <table id="leaderboard">
-        <tbody></tbody>
-    </table>
+    <div id="leaderboard-container">
+        <table id="leaderboard">
+            <tbody></tbody>
+        </table>
+    </div>
 
     <script>
         let previousData = [];
-        const API_URL = "https://script.google.com/macros/s/AKfycbyq_ZfS7Nwn_x9aybgVFCJ3ySOUwpko2GsS4UN_PfTPhdX2ck4wsWoB8lwKPUSv3j_i/exec?data=true"; // Replace with your Apps Script URL
+        const API_URL = "https://script.google.com/macros/s/AKfycbyq_ZfS7Nwn_x9aybgVFCJ3ySOUwpko2GsS4UN_PfTPhdX2ck4wsWoB8lwKPUSv3j_i/exec?data=true";
 
         async function fetchLeaderboardData() {
             try {
@@ -91,7 +102,7 @@ body {
                     updateTable(result);
                 }
 
-                setTimeout(fetchLeaderboardData, 2000); // Periodic update
+                setTimeout(fetchLeaderboardData, 2000);
             } catch (error) {
                 console.error("Error fetching data:", error);
                 setTimeout(fetchLeaderboardData, 5000);
@@ -106,27 +117,29 @@ body {
             let tableBody = document.querySelector("#leaderboard tbody");
             tableBody.innerHTML = "";  
 
-            data.slice(0, 5).forEach((entry, index) => { // Show only top 5 entries
+            data.slice(0, 5).forEach((entry, index) => {
                 let row = document.createElement("tr");
                 let playerCell = document.createElement("td");
                 let pointsCell = document.createElement("td");
 
-                playerCell.innerHTML = `<span class="spin-effect">${entry.player}</span>`;
-                pointsCell.innerHTML = `<span class="spin-effect">${entry.points}</span>`;
+                playerCell.innerHTML = `<span class="shrink-text spin-effect">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="shrink-text spin-effect">${entry.points}</span>`;
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
                 tableBody.appendChild(row);
 
-                // Trigger spin animation on update
                 setTimeout(() => {
-                    let playerSpan = playerCell.querySelector('.spin-effect');
-                    let pointsSpan = pointsCell.querySelector('.spin-effect');
+                    let playerSpan = playerCell.querySelector('.shrink-text');
+                    let pointsSpan = pointsCell.querySelector('.shrink-text');
+
+                    adjustFontSize(playerSpan);
+                    adjustFontSize(pointsSpan);
 
                     playerSpan.classList.remove('spin-effect');
                     pointsSpan.classList.remove('spin-effect');
 
-                    void playerSpan.offsetWidth; // Force reflow
+                    void playerSpan.offsetWidth; 
                     void pointsSpan.offsetWidth; 
 
                     playerSpan.classList.add('spin-effect');
@@ -135,6 +148,16 @@ body {
             });
 
             previousData = [...data];
+        }
+
+        function adjustFontSize(element) {
+            let parentWidth = element.parentElement.clientWidth;
+            let fontSize = 24;
+
+            while (element.scrollWidth > parentWidth && fontSize > 12) {
+                fontSize--;
+                element.style.fontSize = fontSize + "px";
+            }
         }
 
         fetchLeaderboardData();
