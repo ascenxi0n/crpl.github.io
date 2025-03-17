@@ -112,8 +112,10 @@
 
             let maxEntries = 5;
             let slicedData = previousData.slice(currentIndex, currentIndex + maxEntries);
+            
+            // If there aren't enough entries left, reset index
             if (slicedData.length === 0) {
-                currentIndex = 0; // Reset if no more entries
+                currentIndex = 0;
                 slicedData = previousData.slice(0, maxEntries);
             }
 
@@ -125,17 +127,13 @@
 
                 let actualRank = currentIndex + i + 1; // Calculate global rank
 
-                let rankChanged = previousData[currentIndex + i] && previousData[currentIndex + i].rank !== actualRank;
-                let playerChanged = previousData[currentIndex + i] && previousData[currentIndex + i].player !== entry.player;
-                let pointsChanged = previousData[currentIndex + i] && previousData[currentIndex + i].points !== entry.points;
-
                 rankCell.className = "rank";
                 playerCell.className = "name";
                 pointsCell.className = "points";
 
-                rankCell.innerHTML = `<span class="shrink-text ${rankChanged ? 'spin' : ''}">${actualRank}</span>`;
-                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin' : ''}">${entry.player}</span>`;
-                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin' : ''}">${entry.points}</span>`;
+                rankCell.innerHTML = `<span class="spin">${actualRank}</span>`;
+                playerCell.innerHTML = `<span class="spin">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="spin">${entry.points}</span>`;
 
                 row.appendChild(rankCell);
                 row.appendChild(playerCell);
@@ -145,7 +143,7 @@
 
             currentIndex += maxEntries;
             if (currentIndex >= previousData.length) {
-                currentIndex = 0;
+                currentIndex = 0; // Loop back to the beginning
             }
 
             setTimeout(updateTable, 10000); // Switch entries every 10s
