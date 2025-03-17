@@ -92,6 +92,7 @@
         let allEntries = [];
         let currentIndex = 0;
         let isFirstCycle = true;
+        let lastFetchedData = "";
         const API_URL = "https://script.google.com/macros/s/AKfycbxBSh_DFKxqy38d74o6Xp5GmMtM2CMrl0Gi-do04DOuOaq6vyKBu3yDI_D6bXr_7dCy/exec?data=true";
         const updateSound = document.getElementById("updateSound");
 
@@ -104,12 +105,14 @@
                 
                 let filteredData = result.filter(entry => entry.player && entry.points !== "");
                 
-                if (!isDataSame(filteredData, previousData)) {
+                let newFetchedData = JSON.stringify(filteredData);
+                if (newFetchedData !== lastFetchedData) {
                     allEntries = filteredData;
                     currentIndex = 0;
                     isFirstCycle = true;
                     showNextEntries(true);
                     playUpdateSound();
+                    lastFetchedData = newFetchedData;
                 }
 
                 setTimeout(fetchLeaderboardData, 2000);
@@ -117,10 +120,6 @@
                 console.error("Error fetching data:", error);
                 setTimeout(fetchLeaderboardData, 5000);
             }
-        }
-
-        function isDataSame(newData, oldData) {
-            return JSON.stringify(newData) === JSON.stringify(oldData);
         }
 
         function playUpdateSound() {
