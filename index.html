@@ -1,97 +1,177 @@
-<script>
-    let previousData = [];
-    let currentIndex = 0;
-    const API_URL = "https://script.google.com/macros/s/AKfycbz6rXpt5A4RQUZJ20EZwlaM8twF79urX21FqvL_aSeE7_2rxFac-KEn8iWCR7WeKhNr/exec?data=true";
-    const updateSound = document.getElementById("updateSound");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard</title>
+    <style>
+        @font-face {
+    font-family: 'CasinoFlat';
+    src: url('https://ascenxi0n.github.io/crpl.github.io/Casino.ttf') format('truetype');
+}
 
-    async function fetchLeaderboardData() {
-        try {
-            console.log("Fetching leaderboard data...");
-            const response = await fetch(API_URL, { cache: "no-cache" });
+        body { 
+            font-family: 'CasinoFlat', Arial, sans-serif; 
+            text-align: center;
+            background: transparent;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
 
-            if (!response.ok) {
-                throw new Error(`HTTP Error! Status: ${response.status}`);
+        /* Leaderboard Container */
+        #leaderboard-container {
+            width: vw;
+            height: vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* Table */
+        table { 
+            width: 60%; 
+            height: 100%;
+            border-collapse: collapse; 
+            background: transparent;
+            table-layout: fixed; /* Keep columns fixed */
+        }
+
+        /* Table Cells */
+        td { 
+            padding: 1vh; 
+            font-size: 24px; 
+            color: #FF3300; 
+            -webkit-text-stroke: 0.7px orange;
+            border: none; 
+            text-align: center;
+            background: transparent;
+            letter-spacing: 2px;
+            line-height: 90%;
+            width: 50%; /* Ensures both columns stay separate */
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        /* Shrinking Text If Overflowing */
+        .shrink-text {
+            display: inline-block;
+            max-width: 100%;
+            font-size: 24px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Animation */
+        @keyframes spin {
+            0% { transform: rotateX(0deg); opacity: 1; }
+            50% { transform: rotateX(90deg); opacity: 0.2; }
+            100% { transform: rotateX(0deg); opacity: 1; }
+        }
+
+        .spin-effect {
+            display: inline-block;
+            animation: spin 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="leaderboard-container">
+        <table id="leaderboard">
+            <tbody></tbody>
+        </table>
+    </div>
+    
+    <audio id="updateSound" src="https://ascenxi0n.github.io/crpl.github.io/update.wav"></audio>
+    
+    <script>
+        let previousData = [];
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6rXpt5A4RQUZJ20EZwlaM8twF79urX21FqvL_aSeE7_2rxFac-KEn8iWCR7WeKhNr/exec?data=true";
+        const updateSound = document.getElementById("updateSound");
+
+        async function fetchLeaderboardData() {
+            try {
+                console.log("Fetching leaderboard data...");
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                console.log("Parsed JSON:", result);
+
+                if (!isDataSame(result, previousData)) {
+                    updateTable(result);
+                    playUpdateSound(); // Play sound when leaderboard updates
+                }
+
+                setTimeout(fetchLeaderboardData, 2000);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                setTimeout(fetchLeaderboardData, 5000);
             }
+        }
 
-            const result = await response.json();
-            console.log("Leaderboard Data Fetched:", result);
+        function isDataSame(newData, oldData) {
+            return JSON.stringify(newData) === JSON.stringify(oldData);
+        }
 
-            // Filter out empty entries
-            const filteredData = result.filter(entry => entry.player && entry.points);
+        function playUpdateSound() {
+            updateSound.currentTime = 0;
+            updateSound.play();
+        }
 
-            if (!filteredData.length) {
-                console.warn("Warning: Leaderboard data is empty.");
+        function updateTable(data) {
+            let tableBody = document.querySelector("#leaderboard tbody");
+            tableBody.innerHTML = "";  
+
+            data.slice(0, 5).forEach((entry, index) => {
+                let row = document.createElement("tr");
+                let playerCell = document.createElement("td");
+                let pointsCell = document.createElement("td");
+
+                let playerChanged = previousData[index] && previousData[index].player !== entry.player;
+                let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
+
+                playerCell.innerHTML = <span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${entry.player}</span>;
+                pointsCell.innerHTML = <span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>;
+
+                row.appendChild(playerCell);
+                row.appendChild(pointsCell);
+                tableBody.appendChild(row);
+
+                setTimeout(() => {
+                    let playerSpan = playerCell.querySelector('.shrink-text');
+                    let pointsSpan = pointsCell.querySelector('.shrink-text');
+
+                    adjustFontSize(playerSpan);
+                    adjustFontSize(pointsSpan);
+
+                    playerSpan.classList.remove('spin-effect');
+                    pointsSpan.classList.remove('spin-effect');
+
+                    void playerSpan.offsetWidth;
+                    void pointsSpan.offsetWidth;
+
+                    if (playerChanged || pointsChanged) {
+                        playerSpan.classList.add('spin-effect');
+                        pointsSpan.classList.add('spin-effect');
+                    }
+                }, 10);
+            });
+
+            previousData = [...data];
+        }
+
+
+        function adjustFontSize(element) {
+            let parentWidth = element.parentElement.clientWidth;
+            let fontSize = 24;
+
+            while (element.scrollWidth > parentWidth && fontSize > 12) {
+                fontSize--;
+                element.style.fontSize = fontSize + "px";
             }
-
-            if (!isDataSame(filteredData, previousData)) {
-                previousData = [...filteredData];
-                currentIndex = 0; // Reset index on new data
-                updateTable();
-                playUpdateSound();
-            }
-
-            setTimeout(fetchLeaderboardData, 10000); // Fetch every 10s
-        } catch (error) {
-            console.error("Error fetching leaderboard data:", error.message);
-            setTimeout(fetchLeaderboardData, 10000);
-        }
-    }
-
-    function isDataSame(newData, oldData) {
-        return JSON.stringify(newData) === JSON.stringify(oldData);
-    }
-
-    function playUpdateSound() {
-        updateSound.currentTime = 0;
-        updateSound.play();
-    }
-
-    function updateTable() {
-        let tableBody = document.querySelector("#leaderboard tbody");
-        tableBody.innerHTML = "";
-
-        if (!previousData.length) {
-            console.warn("No valid leaderboard data to display.");
-            return;
         }
 
-        let maxEntries = 5;
-        let slicedData = previousData.slice(currentIndex, currentIndex + maxEntries);
-
-        if (slicedData.length === 0) {
-            currentIndex = 0;
-            slicedData = previousData.slice(0, maxEntries);
-        }
-
-        slicedData.forEach((entry, i) => {
-            let row = document.createElement("tr");
-            let rankCell = document.createElement("td");
-            let playerCell = document.createElement("td");
-            let pointsCell = document.createElement("td");
-
-            let actualRank = currentIndex + i + 1; // Calculate global rank
-
-            rankCell.className = "rank";
-            playerCell.className = "name";
-            pointsCell.className = "points";
-
-            rankCell.innerHTML = `<span class="spin">${actualRank}</span>`;
-            playerCell.innerHTML = `<span class="spin">${entry.player}</span>`;
-            pointsCell.innerHTML = `<span class="spin">${entry.points}</span>`;
-
-            row.appendChild(rankCell);
-            row.appendChild(playerCell);
-            row.appendChild(pointsCell);
-            tableBody.appendChild(row);
-        });
-
-        currentIndex += maxEntries;
-        if (currentIndex >= previousData.length) {
-            currentIndex = 0;
-        }
-
-        setTimeout(updateTable, 10000);
-    }
-
-    fetchLeaderboardData();
-</script>
+        fetchLeaderboardData();
+    </script>
+</body>
+</html>
