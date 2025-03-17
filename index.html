@@ -93,9 +93,9 @@
         let currentIndex = 0;
         let isFirstCycle = true;
         let lastFetchedData = "";
+        let isUpdating = false;
         const API_URL = "https://script.google.com/macros/s/AKfycbxBSh_DFKxqy38d74o6Xp5GmMtM2CMrl0Gi-do04DOuOaq6vyKBu3yDI_D6bXr_7dCy/exec?data=true";
         const updateSound = document.getElementById("updateSound");
-        let isUpdating = false; // Prevent updates during animation
 
         async function fetchLeaderboardData() {
             try {
@@ -110,14 +110,14 @@
                 if (newFetchedData !== lastFetchedData) {
                     lastFetchedData = newFetchedData;
 
-                    // Wait until animation finishes before updating
+                    // Wait for current animation to finish before updating
                     if (!isUpdating) {
                         isUpdating = true;
                         setTimeout(() => {
                             allEntries = filteredData;
                             currentIndex = 0;
                             isFirstCycle = true;
-                            showNextEntries(true);
+                            updateLeaderboard();
                             playUpdateSound();
                             isUpdating = false;
                         }, 1000); // Adjust delay to match animation duration
@@ -136,12 +136,12 @@
             updateSound.play();
         }
 
-        function showNextEntries(applySwivel) {
+        function updateLeaderboard() {
             let tableBody = document.querySelector("#leaderboard tbody");
 
-            // Keep old data visible while animating new data
+            // Preserve old data while animating new data
             let displayedEntries = allEntries.slice(currentIndex, currentIndex + 5);
-            
+
             displayedEntries.forEach((entry, index) => {
                 let row;
                 if (tableBody.children[index]) {
@@ -151,16 +151,24 @@
                     tableBody.appendChild(row);
                 }
 
-                if (applySwivel) row.classList.add("swivel");
-
                 let playerCell = row.children[0] || document.createElement("td");
                 let pointsCell = row.children[1] || document.createElement("td");
 
                 let playerChanged = previousData[index] && previousData[index].player !== entry.player;
                 let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
 
-                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${currentIndex + index + 1} ${entry.player}</span>`;
-                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>`;
+                // Add spin effect only when a specific data point changes
+                if (playerChanged) {
+                    playerCell.innerHTML = `<span class="shrink-text spin-effect">${currentIndex + index + 1} ${entry.player}</span>`;
+                } else {
+                    playerCell.innerHTML = `<span class="shrink-text">${currentIndex + index + 1} ${entry.player}</span>`;
+                }
+
+                if (pointsChanged) {
+                    pointsCell.innerHTML = `<span class="shrink-text spin-effect">${entry.points}</span>`;
+                } else {
+                    pointsCell.innerHTML = `<span class="shrink-text">${entry.points}</span>`;
+                }
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
@@ -168,12 +176,13 @@
 
             previousData = [...displayedEntries];
             currentIndex += 5;
+
             if (currentIndex >= allEntries.length) {
                 currentIndex = 0;
                 isFirstCycle = false;
             }
-            
-            setTimeout(() => showNextEntries(currentIndex === 0 || isFirstCycle), 10000);
+
+            setTimeout(updateLeaderboard, 10000);
         }
 
         fetchLeaderboardData();
