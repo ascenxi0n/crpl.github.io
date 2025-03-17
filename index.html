@@ -130,8 +130,8 @@
                 let playerChanged = previousData[index] && previousData[index].player !== entry.player;
                 let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
 
-                playerCell.innerHTML = <span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${entry.player}</span>;
-                pointsCell.innerHTML = <span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>;
+                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>`;
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
