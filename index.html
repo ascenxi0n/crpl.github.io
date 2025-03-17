@@ -129,7 +129,9 @@
 
         function updateValuesOnly(newData) {
             let rows = document.querySelectorAll("#leaderboard tbody tr");
-            newData.slice(currentIndex, currentIndex + 5).forEach((entry, index) => {
+            let displayedEntries = allEntries.slice(currentIndex, currentIndex + 5);
+
+            displayedEntries.forEach((entry, index) => {
                 let playerCell = rows[index]?.children[0];
                 let pointsCell = rows[index]?.children[1];
 
