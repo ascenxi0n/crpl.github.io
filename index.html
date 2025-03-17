@@ -1,155 +1,97 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leaderboard</title>
-    <style>
-        @font-face {
-            font-family: 'CasinoFlat';
-            src: url('https://ascenxi0n.github.io/crpl.github.io/Casino.ttf') format('truetype');
-        }
+<script>
+    let previousData = [];
+    let currentIndex = 0;
+    const API_URL = "https://script.google.com/macros/s/AKfycbz6rXpt5A4RQUZJ20EZwlaM8twF79urX21FqvL_aSeE7_2rxFac-KEn8iWCR7WeKhNr/exec?data=true";
+    const updateSound = document.getElementById("updateSound");
 
-        body { 
-            font-family: 'CasinoFlat', Arial, sans-serif; 
-            text-align: center;
-            background: transparent;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-        }
+    async function fetchLeaderboardData() {
+        try {
+            console.log("Fetching leaderboard data...");
+            const response = await fetch(API_URL, { cache: "no-cache" });
 
-        #leaderboard-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        table { 
-            width: 60%; 
-            border-collapse: collapse; 
-            background: transparent;
-        }
-
-        td { 
-            padding: 1vh; 
-            font-size: 24px; 
-            color: #FF3300; 
-            -webkit-text-stroke: 0.7px orange;
-            text-align: center;
-            background: transparent;
-            letter-spacing: 2px;
-            width: 33.3%; 
-            white-space: nowrap;
-        }
-
-        /* Slot Machine Spin */
-        @keyframes spin {
-            0% { transform: rotateX(0deg); opacity: 1; }
-            50% { transform: rotateX(90deg); opacity: 0.2; }
-            100% { transform: rotateX(0deg); opacity: 1; }
-        }
-
-        .spin { animation: spin 0.5s ease-in-out; }
-
-        .rank { text-align: left; }
-        .name { text-align: center; }
-        .points { text-align: right; }
-
-    </style>
-</head>
-<body>
-    <div id="leaderboard-container">
-        <table id="leaderboard">
-            <tbody></tbody>
-        </table>
-    </div>
-    
-    <audio id="updateSound" src="https://ascenxi0n.github.io/crpl.github.io/update.wav"></audio>
-    
-    <script>
-        let previousData = [];
-        let currentIndex = 0;
-        const API_URL = "https://script.google.com/macros/s/AKfycbz6rXpt5A4RQUZJ20EZwlaM8twF79urX21FqvL_aSeE7_2rxFac-KEn8iWCR7WeKhNr/exec?data=true";
-        const updateSound = document.getElementById("updateSound");
-
-        async function fetchLeaderboardData() {
-            try {
-                console.log("Fetching leaderboard data...");
-                const response = await fetch(API_URL);
-                let result = await response.json();
-                
-                // Filter out empty entries
-                result = result.filter(entry => entry.player && entry.points);
-
-                if (!isDataSame(result, previousData)) {
-                    previousData = [...result];
-                    currentIndex = 0; // Reset index when new data comes in
-                    updateTable();
-                    playUpdateSound();
-                }
-
-                setTimeout(fetchLeaderboardData, 10000); // Fetch every 10s
-            } catch (error) {
-                console.error("Error fetching data:", error);
-                setTimeout(fetchLeaderboardData, 10000);
-            }
-        }
-
-        function isDataSame(newData, oldData) {
-            return JSON.stringify(newData) === JSON.stringify(oldData);
-        }
-
-        function playUpdateSound() {
-            updateSound.currentTime = 0;
-            updateSound.play();
-        }
-
-        function updateTable() {
-            let tableBody = document.querySelector("#leaderboard tbody");
-            tableBody.innerHTML = "";
-
-            let maxEntries = 5;
-            let slicedData = previousData.slice(currentIndex, currentIndex + maxEntries);
-            
-            // If there aren't enough entries left, reset index
-            if (slicedData.length === 0) {
-                currentIndex = 0;
-                slicedData = previousData.slice(0, maxEntries);
+            if (!response.ok) {
+                throw new Error(`HTTP Error! Status: ${response.status}`);
             }
 
-            slicedData.forEach((entry, i) => {
-                let row = document.createElement("tr");
-                let rankCell = document.createElement("td");
-                let playerCell = document.createElement("td");
-                let pointsCell = document.createElement("td");
+            const result = await response.json();
+            console.log("Leaderboard Data Fetched:", result);
 
-                let actualRank = currentIndex + i + 1; // Calculate global rank
+            // Filter out empty entries
+            const filteredData = result.filter(entry => entry.player && entry.points);
 
-                rankCell.className = "rank";
-                playerCell.className = "name";
-                pointsCell.className = "points";
-
-                rankCell.innerHTML = `<span class="spin">${actualRank}</span>`;
-                playerCell.innerHTML = `<span class="spin">${entry.player}</span>`;
-                pointsCell.innerHTML = `<span class="spin">${entry.points}</span>`;
-
-                row.appendChild(rankCell);
-                row.appendChild(playerCell);
-                row.appendChild(pointsCell);
-                tableBody.appendChild(row);
-            });
-
-            currentIndex += maxEntries;
-            if (currentIndex >= previousData.length) {
-                currentIndex = 0; // Loop back to the beginning
+            if (!filteredData.length) {
+                console.warn("Warning: Leaderboard data is empty.");
             }
 
-            setTimeout(updateTable, 10000); // Switch entries every 10s
+            if (!isDataSame(filteredData, previousData)) {
+                previousData = [...filteredData];
+                currentIndex = 0; // Reset index on new data
+                updateTable();
+                playUpdateSound();
+            }
+
+            setTimeout(fetchLeaderboardData, 10000); // Fetch every 10s
+        } catch (error) {
+            console.error("Error fetching leaderboard data:", error.message);
+            setTimeout(fetchLeaderboardData, 10000);
+        }
+    }
+
+    function isDataSame(newData, oldData) {
+        return JSON.stringify(newData) === JSON.stringify(oldData);
+    }
+
+    function playUpdateSound() {
+        updateSound.currentTime = 0;
+        updateSound.play();
+    }
+
+    function updateTable() {
+        let tableBody = document.querySelector("#leaderboard tbody");
+        tableBody.innerHTML = "";
+
+        if (!previousData.length) {
+            console.warn("No valid leaderboard data to display.");
+            return;
         }
 
-        fetchLeaderboardData();
-    </script>
-</body>
-</html>
+        let maxEntries = 5;
+        let slicedData = previousData.slice(currentIndex, currentIndex + maxEntries);
+
+        if (slicedData.length === 0) {
+            currentIndex = 0;
+            slicedData = previousData.slice(0, maxEntries);
+        }
+
+        slicedData.forEach((entry, i) => {
+            let row = document.createElement("tr");
+            let rankCell = document.createElement("td");
+            let playerCell = document.createElement("td");
+            let pointsCell = document.createElement("td");
+
+            let actualRank = currentIndex + i + 1; // Calculate global rank
+
+            rankCell.className = "rank";
+            playerCell.className = "name";
+            pointsCell.className = "points";
+
+            rankCell.innerHTML = `<span class="spin">${actualRank}</span>`;
+            playerCell.innerHTML = `<span class="spin">${entry.player}</span>`;
+            pointsCell.innerHTML = `<span class="spin">${entry.points}</span>`;
+
+            row.appendChild(rankCell);
+            row.appendChild(playerCell);
+            row.appendChild(pointsCell);
+            tableBody.appendChild(row);
+        });
+
+        currentIndex += maxEntries;
+        if (currentIndex >= previousData.length) {
+            currentIndex = 0;
+        }
+
+        setTimeout(updateTable, 10000);
+    }
+
+    fetchLeaderboardData();
+</script>
