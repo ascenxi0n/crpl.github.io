@@ -91,7 +91,6 @@
         let previousData = [];
         let allEntries = [];
         let currentIndex = 0;
-        let isFirstCycle = true;
         let lastFetchedData = "";
         const API_URL = "https://script.google.com/macros/s/AKfycbxBSh_DFKxqy38d74o6Xp5GmMtM2CMrl0Gi-do04DOuOaq6vyKBu3yDI_D6bXr_7dCy/exec?data=true";
         const updateSound = document.getElementById("updateSound");
@@ -109,10 +108,11 @@
                 if (newFetchedData !== lastFetchedData) {
                     allEntries = filteredData;
                     currentIndex = 0;
-                    isFirstCycle = true;
-                    showNextEntries(true);
+                    showNextEntries(true); // Swivel animation only when switching sets
                     playUpdateSound();
                     lastFetchedData = newFetchedData;
+                } else {
+                    updateValuesOnly(filteredData); // Only spin animation on value change
                 }
 
                 setTimeout(fetchLeaderboardData, 2000);
@@ -125,6 +125,23 @@
         function playUpdateSound() {
             updateSound.currentTime = 0;
             updateSound.play();
+        }
+
+        function updateValuesOnly(newData) {
+            let rows = document.querySelectorAll("#leaderboard tbody tr");
+            newData.slice(currentIndex, currentIndex + 5).forEach((entry, index) => {
+                let playerCell = rows[index]?.children[0];
+                let pointsCell = rows[index]?.children[1];
+
+                if (playerCell && playerCell.innerText.trim() !== `${currentIndex + index + 1} ${entry.player}`) {
+                    playerCell.innerHTML = `<span class="shrink-text spin-effect">${currentIndex + index + 1} ${entry.player}</span>`;
+                }
+                if (pointsCell && pointsCell.innerText.trim() !== entry.points) {
+                    pointsCell.innerHTML = `<span class="shrink-text spin-effect">${entry.points}</span>`;
+                }
+            });
+
+            previousData = [...newData];
         }
 
         function showNextEntries(applySwivel) {
@@ -140,11 +157,8 @@
                 let playerCell = document.createElement("td");
                 let pointsCell = document.createElement("td");
 
-                let playerChanged = previousData[index] && previousData[index].player !== entry.player;
-                let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
-
-                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${currentIndex + index + 1} ${entry.player}</span>`;
-                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>`;
+                playerCell.innerHTML = `<span class="shrink-text">${currentIndex + index + 1} ${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="shrink-text">${entry.points}</span>`;
                 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
@@ -155,10 +169,9 @@
             currentIndex += 5;
             if (currentIndex >= allEntries.length) {
                 currentIndex = 0;
-                isFirstCycle = false;
             }
             
-            setTimeout(() => showNextEntries(currentIndex === 0 || isFirstCycle), 10000);
+            setTimeout(() => showNextEntries(currentIndex === 0), 10000);
         }
 
         fetchLeaderboardData();
