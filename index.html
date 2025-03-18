@@ -23,9 +23,8 @@
             width: 100vw;
             height: 100vh;
             display: flex;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: flex-start;
-            overflow: hidden;
             padding-top: 20px;
         }
 
@@ -33,7 +32,6 @@
             width: 60%; 
             border-collapse: collapse; 
             background: transparent;
-            table-layout: fixed;
         }
 
         td {
@@ -46,7 +44,6 @@
             background: transparent;
             letter-spacing: 2px;
             line-height: 90%;
-            overflow: hidden;
             white-space: nowrap;
         }
 
@@ -67,15 +64,6 @@
             display: inline-block;
             animation: spin 0.5s ease-in-out;
         }
-
-        @keyframes swivel {
-            0% { transform: rotateY(90deg); opacity: 0; }
-            100% { transform: rotateY(0deg); opacity: 1; }
-        }
-
-        .swivel {
-            animation: swivel 1s ease-in-out;
-        }
     </style>
 </head>
 <body>
@@ -89,39 +77,25 @@
     
     <script>
         let previousData = [];
-        let allEntries = [];
-        let currentIndex = 0;
-        let isFirstCycle = true;
+        let currentData = [];
         let lastFetchedData = "";
-        let isUpdating = false;
-        const API_URL = "https://script.google.com/macros/s/AKfycbxBSh_DFKxqy38d74o6Xp5GmMtM2CMrl0Gi-do04DOuOaq6vyKBu3yDI_D6bXr_7dCy/exec?data=true";
-        const updateSound = document.getElementById("updateSound");
+        let API_URL = "https://script.google.com/macros/s/AKfycbxBSh_DFKxqy38d74o6Xp5GmMtM2CMrl0Gi-do04DOuOaq6vyKBu3yDI_D6bXr_7dCy/exec?data=true";
+        let updateSound = document.getElementById("updateSound");
 
         async function fetchLeaderboardData() {
             try {
                 console.log("Fetching leaderboard data...");
                 const response = await fetch(API_URL);
                 const result = await response.json();
-                console.log("Parsed JSON:", result);
                 
                 let filteredData = result.filter(entry => entry.player && entry.points !== "");
-                
                 let newFetchedData = JSON.stringify(filteredData);
+
                 if (newFetchedData !== lastFetchedData) {
                     lastFetchedData = newFetchedData;
-
-                    // Wait for current animation to finish before updating
-                    if (!isUpdating) {
-                        isUpdating = true;
-                        setTimeout(() => {
-                            allEntries = filteredData;
-                            currentIndex = 0;
-                            isFirstCycle = true;
-                            updateLeaderboard();
-                            playUpdateSound();
-                            isUpdating = false;
-                        }, 1000); // Adjust delay to match animation duration
-                    }
+                    currentData = filteredData.slice(0, 5); // Take top 5
+                    updateLeaderboard();
+                    playUpdateSound();
                 }
 
                 setTimeout(fetchLeaderboardData, 2000);
@@ -138,30 +112,22 @@
 
         function updateLeaderboard() {
             let tableBody = document.querySelector("#leaderboard tbody");
+            tableBody.innerHTML = ""; // Clear previous entries
 
-            // Preserve old data while animating new data
-            let displayedEntries = allEntries.slice(currentIndex, currentIndex + 5);
-
-            displayedEntries.forEach((entry, index) => {
-                let row;
-                if (tableBody.children[index]) {
-                    row = tableBody.children[index]; // Update existing row
-                } else {
-                    row = document.createElement("tr");
-                    tableBody.appendChild(row);
-                }
-
-                let playerCell = row.children[0] || document.createElement("td");
-                let pointsCell = row.children[1] || document.createElement("td");
+            currentData.forEach((entry, index) => {
+                let row = document.createElement("tr");
+                
+                let playerCell = document.createElement("td");
+                let pointsCell = document.createElement("td");
 
                 let playerChanged = previousData[index] && previousData[index].player !== entry.player;
                 let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
 
-                // Add spin effect only when a specific data point changes
+                // Add spin effect only when data changes
                 if (playerChanged) {
-                    playerCell.innerHTML = `<span class="shrink-text spin-effect">${currentIndex + index + 1} ${entry.player}</span>`;
+                    playerCell.innerHTML = `<span class="shrink-text spin-effect">${index + 1} ${entry.player}</span>`;
                 } else {
-                    playerCell.innerHTML = `<span class="shrink-text">${currentIndex + index + 1} ${entry.player}</span>`;
+                    playerCell.innerHTML = `<span class="shrink-text">${index + 1} ${entry.player}</span>`;
                 }
 
                 if (pointsChanged) {
@@ -172,17 +138,10 @@
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
+                tableBody.appendChild(row);
             });
 
-            previousData = [...displayedEntries];
-            currentIndex += 5;
-
-            if (currentIndex >= allEntries.length) {
-                currentIndex = 0;
-                isFirstCycle = false;
-            }
-
-            setTimeout(updateLeaderboard, 10000);
+            previousData = [...currentData]; // Save current state
         }
 
         fetchLeaderboardData();
