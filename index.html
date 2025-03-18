@@ -6,9 +6,9 @@
     <title>Leaderboard</title>
     <style>
         @font-face {
-            font-family: 'CasinoFlat';
-            src: url('https://ascenxi0n.github.io/crpl.github.io/Casino.ttf') format('truetype');
-        }
+    font-family: 'CasinoFlat';
+    src: url('https://ascenxi0n.github.io/crpl.github.io/Casino.ttf') format('truetype');
+}
 
         body { 
             font-family: 'CasinoFlat', Arial, sans-serif; 
@@ -19,41 +19,51 @@
             overflow: hidden;
         }
 
+        /* Leaderboard Container */
         #leaderboard-container {
-            width: 100vw;
-            height: 100vh;
+            width: vw;
+            height: vh;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
-            padding-top: 20px;
+            align-items: center;
+            overflow: hidden;
         }
 
+        /* Table */
         table { 
             width: 60%; 
+            height: 100%;
             border-collapse: collapse; 
             background: transparent;
+            table-layout: fixed; /* Keep columns fixed */
         }
 
-        td {
-            padding: 1vh;
-            font-size: 24px;
-            color: #FF3300;
+        /* Table Cells */
+        td { 
+            padding: 1vh; 
+            font-size: 24px; 
+            color: #FF3300; 
             -webkit-text-stroke: 0.7px orange;
-            border: none;
+            border: none; 
             text-align: center;
             background: transparent;
             letter-spacing: 2px;
             line-height: 90%;
+            width: 50%; /* Ensures both columns stay separate */
+            overflow: hidden;
             white-space: nowrap;
         }
 
+        /* Shrinking Text If Overflowing */
         .shrink-text {
             display: inline-block;
             max-width: 100%;
+            font-size: 24px;
             text-overflow: ellipsis;
             white-space: nowrap;
         }
 
+        /* Animation */
         @keyframes spin {
             0% { transform: rotateX(0deg); opacity: 1; }
             50% { transform: rotateX(90deg); opacity: 0.2; }
@@ -77,25 +87,19 @@
     
     <script>
         let previousData = [];
-        let currentData = [];
-        let lastFetchedData = "";
-        let API_URL = "https://script.google.com/macros/s/AKfycbxBSh_DFKxqy38d74o6Xp5GmMtM2CMrl0Gi-do04DOuOaq6vyKBu3yDI_D6bXr_7dCy/exec?data=true";
-        let updateSound = document.getElementById("updateSound");
+        const API_URL = "https://script.google.com/macros/s/AKfycbz6rXpt5A4RQUZJ20EZwlaM8twF79urX21FqvL_aSeE7_2rxFac-KEn8iWCR7WeKhNr/exec?data=true";
+        const updateSound = document.getElementById("updateSound");
 
         async function fetchLeaderboardData() {
             try {
                 console.log("Fetching leaderboard data...");
                 const response = await fetch(API_URL);
                 const result = await response.json();
-                
-                let filteredData = result.filter(entry => entry.player && entry.points !== "");
-                let newFetchedData = JSON.stringify(filteredData);
+                console.log("Parsed JSON:", result);
 
-                if (newFetchedData !== lastFetchedData) {
-                    lastFetchedData = newFetchedData;
-                    currentData = filteredData.slice(0, 5); // Take top 5
-                    updateLeaderboard();
-                    playUpdateSound();
+                if (!isDataSame(result, previousData)) {
+                    updateTable(result);
+                    playUpdateSound(); // Play sound when leaderboard updates
                 }
 
                 setTimeout(fetchLeaderboardData, 2000);
@@ -105,43 +109,66 @@
             }
         }
 
+        function isDataSame(newData, oldData) {
+            return JSON.stringify(newData) === JSON.stringify(oldData);
+        }
+
         function playUpdateSound() {
             updateSound.currentTime = 0;
             updateSound.play();
         }
 
-        function updateLeaderboard() {
+        function updateTable(data) {
             let tableBody = document.querySelector("#leaderboard tbody");
-            tableBody.innerHTML = ""; // Clear previous entries
+            tableBody.innerHTML = "";  
 
-            currentData.forEach((entry, index) => {
+            data.slice(0, 5).forEach((entry, index) => {
                 let row = document.createElement("tr");
-                
                 let playerCell = document.createElement("td");
                 let pointsCell = document.createElement("td");
 
                 let playerChanged = previousData[index] && previousData[index].player !== entry.player;
                 let pointsChanged = previousData[index] && previousData[index].points !== entry.points;
 
-                // Add spin effect only when data changes
-                if (playerChanged) {
-                    playerCell.innerHTML = `<span class="shrink-text spin-effect">${index + 1} ${entry.player}</span>`;
-                } else {
-                    playerCell.innerHTML = `<span class="shrink-text">${index + 1} ${entry.player}</span>`;
-                }
-
-                if (pointsChanged) {
-                    pointsCell.innerHTML = `<span class="shrink-text spin-effect">${entry.points}</span>`;
-                } else {
-                    pointsCell.innerHTML = `<span class="shrink-text">${entry.points}</span>`;
-                }
+                playerCell.innerHTML = `<span class="shrink-text ${playerChanged ? 'spin-effect' : ''}">${entry.player}</span>`;
+                pointsCell.innerHTML = `<span class="shrink-text ${pointsChanged ? 'spin-effect' : ''}">${entry.points}</span>`;
 
                 row.appendChild(playerCell);
                 row.appendChild(pointsCell);
                 tableBody.appendChild(row);
+
+                setTimeout(() => {
+                    let playerSpan = playerCell.querySelector('.shrink-text');
+                    let pointsSpan = pointsCell.querySelector('.shrink-text');
+
+                    adjustFontSize(playerSpan);
+                    adjustFontSize(pointsSpan);
+
+                    playerSpan.classList.remove('spin-effect');
+                    pointsSpan.classList.remove('spin-effect');
+
+                    void playerSpan.offsetWidth;
+                    void pointsSpan.offsetWidth;
+
+                    if (playerChanged || pointsChanged) {
+                        playerSpan.classList.add('spin-effect');
+                        pointsSpan.classList.add('spin-effect');
+                    }
+                }, 10);
             });
 
-            previousData = [...currentData]; // Save current state
+            previousData = [...data];
+        }
+
+
+        function adjustFontSize(element) {
+            let parentWidth = element.parentElement.clientWidth;
+            let fontSize = 24;
+
+            while (element.scrollWidth > parentWidth && fontSize > 12) {
+                fontSize--;
+                element.style.fontSize = fontSize + "px";
+            }
         }
 
         fetchLeaderboardData();
